@@ -1,0 +1,29 @@
+{
+  "inbounds": [
+    { "type": "vless", "tag": "vless-in", "listen": "::", "listen_port": 443,
+      "users": [ { "name": "alice", "uuid": "..." }, { "name": "bob", "uuid": "..." } ] },
+    { "type": "tuic", "tag": "tuic-1", "listen": "::", "listen_port": 8443,
+      "users": [ { "name": "carol", "uuid": "...", "password": "..." } ] }
+  ],
+  "outbounds": [
+    { "type": "direct", "tag": "direct" },
+
+    { "type": "bandwidth-limiter", "tag": "limit-users", "strategy": "users",
+      "users": [
+        { "name": "alice", "strategy": "global", "mode": "bidirectional", "speed": "10MB" },
+        { "name": "bob",   "strategy": "connection", "mode": "download", "speed": "2MB" }
+      ],
+      "route": { "final": "direct" } },
+
+    { "type": "bandwidth-limiter", "tag": "limit-tuic", "strategy": "global",
+      "mode": "bidirectional", "speed": "50MB", "flow_keys": ["user"],
+      "route": { "final": "direct" } }
+  ],
+  "route": {
+    "rules": [
+      { "inbound": ["tuic-1"], "outbound": "limit-tuic" },
+      { "auth_user": ["alice", "bob"], "outbound": "limit-users" }
+    ],
+    "final": "direct"
+  }
+}
