@@ -23,7 +23,11 @@ func RegisterOutbound(registry *outbound.Registry) {
 	outbound.Register[option.BandwidthLimiterOutboundOptions](registry, C.TypeBandwidthLimiter, NewOutbound)
 }
 
-var _ adapter.Lifecycle = (*Outbound)(nil)
+var (
+	_ adapter.Lifecycle               = (*Outbound)(nil)
+	_ adapter.ConnectionHandler       = (*Outbound)(nil)
+	_ adapter.PacketConnectionHandler = (*Outbound)(nil)
+)
 
 type Outbound struct {
 	outbound.Adapter
@@ -129,7 +133,7 @@ func (h *Outbound) ListenPacket(ctx context.Context, destination M.Socksaddr) (n
 	return wrappedConn, nil
 }
 
-func (h *Outbound) NewConnectionEx(ctx context.Context, conn net.Conn, metadata adapter.InboundContext, onClose N.CloseHandlerFunc) {
+func (h *Outbound) NewConnection(ctx context.Context, conn net.Conn, metadata adapter.InboundContext, onClose N.CloseHandlerFunc) {
 	ctx = adapter.WithContext(ctx, &metadata)
 	wrappedConn, err := h.strategy.wrapConn(ctx, conn, &metadata, false)
 	if err != nil {
@@ -141,7 +145,7 @@ func (h *Outbound) NewConnectionEx(ctx context.Context, conn net.Conn, metadata 
 	return
 }
 
-func (h *Outbound) NewPacketConnectionEx(ctx context.Context, conn N.PacketConn, metadata adapter.InboundContext, onClose N.CloseHandlerFunc) {
+func (h *Outbound) NewPacketConnection(ctx context.Context, conn N.PacketConn, metadata adapter.InboundContext, onClose N.CloseHandlerFunc) {
 	ctx = adapter.WithContext(ctx, &metadata)
 	packetConn, err := h.strategy.wrapPacketConn(ctx, bufio.NewNetPacketConn(conn), &metadata, false)
 	if err != nil {
